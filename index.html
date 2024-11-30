@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Powered Data Stories</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: rgb(182, 210, 182);
+            
+        }
+
+        header {
+            background-color:rgb(68, 160, 68);
+            color: white;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .container {
+            padding: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        textarea,
+        input[type="text"],
+        select {
+            width: 100%;
+            padding: 0.8rem;
+            margin-top: 0.5rem;
+            border: 1px solid black;
+            border-radius: 5px;
+        }
+
+        button {
+            background-color: rgb(68, 160, 68);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            
+        }
+
+        button:hover {
+            background-color: rgb(68, 160, 68);
+        }
+
+        .chart-container {
+            margin-top: 2rem;
+            background-color: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart {
+            width: 100%;
+            height: 400px;
+        }
+
+        .auth-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .auth-btn {
+            background-color: rgb(68, 160, 68);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .auth-btn:hover {
+            background-color: rgb(68, 160, 68);
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>AI-Powered Data visualization</h1>
+    </header>
+
+    <div class="container">
+        
+        <div class="auth-container" id="authContainer">
+            <button id="googleSignInBtn" class="auth-btn">Sign In with Google</button>
+        </div>
+
+       
+        <div class="form-group">
+            <label for="prompt">Enter the prompt:</label>
+            <textarea id="prompt" rows="4" placeholder="write the prompts to get the chart data"></textarea>
+        </div>
+
+        <button onclick="generateChart()">Generate Data Story</button>
+
+      
+        <div class="form-group" style="margin-top: 2rem;">
+            <label for="title">Chart Title:</label>
+            <input type="text" id="title" placeholder="Enter chart title" onchange="updateChartTitle()">
+        </div>
+        <div class="form-group">
+            <label for="color">Chart Color:</label>
+            <input type="color" id="color" onchange="updateChartColor()">
+        </div>
+
+       
+        <div class="chart-container">
+            <canvas id="chartCanvas" class="chart"></canvas>
+            <div id="dataStoryText"></div>
+        </div>
+
+       
+        <div class="form-group" style="margin-top: 2rem;">
+            <button onclick="downloadChart()">Download as PNG</button>
+            <button onclick="downloadSVG()">Download as SVG</button>
+            <button onclick="copyEmbedCode()">Copy Embed Code</button>
+        </div>
+    </div>
+
+   
+    <script src="https://cdn.clerk.dev/clerk.js"></script>
+
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        let chart;
+
+        
+        Clerk.load({
+            apiVersion: 2,
+            frontendApi: 'your-clerk-frontend-api', 
+            appearance: { elements: { rootBox: '#authContainer' } }
+        });
+
+       
+        const googleSignInBtn = document.getElementById('googleSignInBtn');
+        googleSignInBtn.addEventListener('click', () => {
+            Clerk.signInWithGoogle()
+                .then(user => {
+                    document.getElementById('authContainer').innerHTML = `<p>Welcome, ${user.firstName} ${user.lastName}!</p>`;
+                })
+                .catch(error => console.log(error));
+        });
+
+      
+        async function generateChart() {
+            const prompt = document.getElementById('prompt').value;
+            const dataStoryText = document.getElementById('dataStoryText');
+
+            try {
+               
+                const data = {
+                    labels: ['Q1', 'Q2', 'Q3', 'Q4'],
+                    datasets: [{
+                        label: 'Sales',
+                        data: [12000, 15000, 13000, 17000],
+                        backgroundColor: 'blue'
+                    }]
+                };
+
+                if (chart) chart.destroy();
+
+                chart = new Chart(document.getElementById('chartCanvas'), {
+                    type: 'bar',
+                    data: data,
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { display: true }
+                        }
+                    }
+                });
+
+                
+                dataStoryText.innerHTML = `<p><strong>Data Story:</strong> The sales figures show a steady growth over 2023, with the highest sales in Q4 at $17,000, indicating a strong end-of-year performance.</p>`;
+            } catch (error) {
+                dataStoryText.innerHTML = `<p style="color: red;">Error generating data story: ${error.message}</p>`;
+            }
+        }
+
+        
+        function updateChartTitle() {
+            const title = document.getElementById('title').value;
+            chart.options.plugins.title = {
+                display: true,
+                text: title
+            };
+            chart.update();
+        }
+
+        
+        function updateChartColor() {
+            const color = document.getElementById('color').value;
+            chart.data.datasets[0].backgroundColor = color;
+            chart.update();
+        }
+
+       
+        function downloadChart() {
+            const url = chart.toBase64Image();
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'chart.png';
+            link.click();
+        }
+
+        
+        function downloadSVG() {
+            const svg = chart.toBase64Image('image/svg+xml');
+            const link = document.createElement('a');
+            link.href = svg;
+            link.download = 'chart.svg';
+            link.click();
+        }
+
+       
+        function copyEmbedCode() {
+            const embedCode = `<iframe src="YOUR_EMBED_URL" width="600" height="400"></iframe>`;
+            navigator.clipboard.writeText(embedCode).then(() => {
+                alert('Embed code copied to clipboard!');
+            });
+        }
+    </script>
+</body>
+
+</html>
